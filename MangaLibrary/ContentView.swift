@@ -28,14 +28,12 @@ struct ContentView: View {
 					Text("\(item.title ?? "")")
 				}
 				
-				// Text("\(requestResults)")
 				Button {
 					Task {
 						do {
 							// First request the books
 							try WebRequester().fetchBookData(from: urlText, completion: { book in
 								bookRequestResults = book
-								// let _ = print(bookRequestResults!.authors!.first!.author!.key!)
 							})
 						} catch {
 							let _ = error.localizedDescription
@@ -61,7 +59,6 @@ struct ContentView: View {
 					// Request a new Author
 					try WebRequester().fetchAuthorData(extension: newUrl, completion: { author in
 						authorRequestResults = author
-						// let _ = print("Author results: \(authorRequestResults)")
 					})
 				}
 			}
