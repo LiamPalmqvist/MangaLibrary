@@ -6,56 +6,66 @@
 //
 
 import SwiftUI
+import UIKit
 import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \StoredBook.title, ascending: true)],
         animation: .default)
-    private var items: FetchedResults<Item>
+	private var items: FetchedResults<StoredBook>
 
+	@State private var bookRequestResults: Book?
+	@State private var authorRequestResults: Author?
+	@State private var urlText: String = ""
+	
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
+		NavigationView {
+			VStack {
+				ForEach(items, id: \.self) { item in
+					Text("\(item.title ?? "")")
+				}
+				
+				// Text("\(requestResults)")
+				Button {
+					Task {
+						do {
+							// First request the books
+							try WebRequester().fetchBookData(from: urlText, completion: { book in
+								bookRequestResults = book
+								// let _ = print(bookRequestResults!.authors!.first!.author!.key!)
+							})
+						} catch {
+							let _ = error.localizedDescription
+						}
+					}
+				} label: {
+					Text("Push to get webResult")
+				}
+				
+				TextField("Input some text", text: $urlText)
+				
+				if bookRequestResults != nil && authorRequestResults != nil {
+					ListItemView(boundBook: $bookRequestResults, boundAuthor: $authorRequestResults)
+				}
+			}
+		}
+		.onChange(of: bookRequestResults?.title!, {
+			Task {
+				do {
+					// put the URL together for an author
+					let newUrl = "https://openlibrary.org\(bookRequestResults!.authors!.first!.author!.key!).json"
+					
+					// Request a new Author
+					try WebRequester().fetchAuthorData(extension: newUrl, completion: { author in
+						authorRequestResults = author
+						// let _ = print("Author results: \(authorRequestResults)")
+					})
+				}
+			}
+		})
     }
 
     private func deleteItems(offsets: IndexSet) {
@@ -82,5 +92,5 @@ private let itemFormatter: DateFormatter = {
 }()
 
 #Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+	ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

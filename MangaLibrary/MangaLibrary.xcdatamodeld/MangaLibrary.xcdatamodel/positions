@@ -1,0 +1,17 @@
+[
+  {
+    "name" : "StoredAuthor",
+    "positionX" : "852.48046875",
+    "positionY" : "212.484375"
+  },
+  {
+    "name" : "StoredBook",
+    "positionX" : "175.0",
+    "positionY" : "221.484375"
+  },
+  {
+    "name" : "StoredBookAuthor",
+    "positionX" : "520.046875",
+    "positionY" : "155.0"
+  }
+]
